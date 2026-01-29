@@ -4,6 +4,8 @@
 
 A lightweight audio conversion plugin for [Fooyin music player](https://github.com/ludouzi/fooyin) that uses dedicated codec executables for high-quality audio format conversion.
 
+<img width="1277" height="764" alt="image" src="https://github.com/user-attachments/assets/59f9a9d2-e60b-47ae-bf47-929643f246dc" />
+
 ## Features
 
 - **Multiple Format Support**: Convert between MP3, FLAC, Opus, and Ogg Vorbis
