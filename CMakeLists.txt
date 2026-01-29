@@ -4,7 +4,7 @@ project(
     fooyin-converter
     VERSION 0.1.0
     DESCRIPTION "Audio Converter Plugin for Fooyin"
-    HOMEPAGE_URL "https://github.com/fooyin/fooyin-converter"
+    HOMEPAGE_URL "https://github.com/jalabulajunx/fooyin_converter"
     LANGUAGES CXX
 )
 
@@ -48,6 +48,9 @@ create_fooyin_plugin(
     DEPENDS Fooyin::Core Fooyin::Gui Fooyin::Utils Qt6::Widgets
     SOURCES ${SOURCES}
 )
+
+# Set custom output name
+set_target_properties(fooyin-converter PROPERTIES OUTPUT_NAME "fooyin_converterplugin")
 
 # Copy metadata
 configure_file(
