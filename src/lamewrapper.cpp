@@ -73,6 +73,40 @@ QStringList LameWrapper::buildArguments(
     // ID3v2 tags
     args << "--id3v2-only";
 
+    // Map standard Vorbis comment keys to LAME's named tag flags
+    static const QMap<QString, QString> namedFlags = {
+        {QStringLiteral("TITLE"),   QStringLiteral("--tt")},
+        {QStringLiteral("ARTIST"),  QStringLiteral("--ta")},
+        {QStringLiteral("ALBUM"),   QStringLiteral("--tl")},
+        {QStringLiteral("DATE"),    QStringLiteral("--ty")},
+        {QStringLiteral("YEAR"),    QStringLiteral("--ty")},
+        {QStringLiteral("TRACK"),   QStringLiteral("--tn")},
+        {QStringLiteral("GENRE"),   QStringLiteral("--tg")},
+        {QStringLiteral("COMMENT"), QStringLiteral("--tc")},
+    };
+    // Map remaining standard tags to ID3v2 frame IDs via --tv
+    static const QMap<QString, QString> frameFlags = {
+        {QStringLiteral("ALBUMARTIST"),  QStringLiteral("TPE2")},
+        {QStringLiteral("ALBUM_ARTIST"), QStringLiteral("TPE2")},
+        {QStringLiteral("DISCNUMBER"),   QStringLiteral("TPOS")},
+        {QStringLiteral("DISC"),         QStringLiteral("TPOS")},
+        {QStringLiteral("COMPOSER"),     QStringLiteral("TCOM")},
+        {QStringLiteral("COPYRIGHT"),    QStringLiteral("TCOP")},
+    };
+    for (auto it = options.tags.constBegin(); it != options.tags.constEnd(); ++it) {
+        const QString key = it.key().toUpper();
+        if (namedFlags.contains(key)) {
+            args << namedFlags[key] << it.value();
+        } else if (frameFlags.contains(key)) {
+            args << QStringLiteral("--tv") << QString("%1=%2").arg(frameFlags[key], it.value());
+        }
+    }
+
+    // Embed cover art
+    if (!options.coverArtPath.isEmpty()) {
+        args << "--ti" << options.coverArtPath;
+    }
+
     // Display progress (don't use --silent as it suppresses progress)
     // --nohist suppresses the bitrate histogram
     args << "--nohist";

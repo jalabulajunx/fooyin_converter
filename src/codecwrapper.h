@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QMap>
 #include <QObject>
 #include <QProcess>
 #include <QString>
@@ -12,6 +13,8 @@ struct ConversionOptions {
     int sampleRate{0};    // 0 = preserve original
     int channels{0};      // 0 = preserve original
     int compressionLevel{8}; // For FLAC (0-8)
+    QMap<QString, QString> tags; // Metadata tags read from source file
+    QString coverArtPath;        // Path to extracted cover art temp file (empty if none)
 };
 
 class CodecWrapper : public QObject

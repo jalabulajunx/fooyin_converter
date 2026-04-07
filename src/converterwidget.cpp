@@ -4,6 +4,84 @@
 
 #include <utils/settings/settingsmanager.h>
 
+#include <QDir>
+#include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QProcess>
+#include <QStandardPaths>
+
+static QMap<QString, QString> readTagsFromFile(const QString& inputPath)
+{
+    QMap<QString, QString> tags;
+
+    const QString ffprobe = QStandardPaths::findExecutable(QStringLiteral("ffprobe"));
+    if (ffprobe.isEmpty()) {
+        qWarning() << "ffprobe not found — tags will not be transferred";
+        return tags;
+    }
+
+    QProcess process;
+    process.start(ffprobe, {
+        QStringLiteral("-v"),            QStringLiteral("quiet"),
+        QStringLiteral("-print_format"), QStringLiteral("json"),
+        QStringLiteral("-show_format"),
+        inputPath
+    });
+    process.waitForFinished(10000);
+
+    const QJsonDocument doc = QJsonDocument::fromJson(process.readAllStandardOutput());
+    if (doc.isNull())
+        return tags;
+
+    const QJsonObject formatTags = doc.object()
+        .value(QStringLiteral("format")).toObject()
+        .value(QStringLiteral("tags")).toObject();
+
+    // ffprobe uses some non-standard key names; normalize to Vorbis comment conventions
+    static const QMap<QString, QString> keyNorm = {
+        {QStringLiteral("album_artist"), QStringLiteral("ALBUMARTIST")},
+        {QStringLiteral("track"),        QStringLiteral("TRACKNUMBER")},
+        {QStringLiteral("disc"),         QStringLiteral("DISCNUMBER")},
+    };
+
+    for (auto it = formatTags.constBegin(); it != formatTags.constEnd(); ++it) {
+        const QString key = it.key().toLower();
+        const QString normalized = keyNorm.value(key, it.key().toUpper());
+        tags.insert(normalized, it.value().toString());
+    }
+
+    return tags;
+}
+
+static QString extractCoverArt(const QString& inputPath)
+{
+    const QString ffmpeg = QStandardPaths::findExecutable(QStringLiteral("ffmpeg"));
+    if (ffmpeg.isEmpty()) {
+        qWarning() << "ffmpeg not found — cover art will not be transferred";
+        return {};
+    }
+
+    const QString tempPath = QDir::tempPath() + QStringLiteral("/fooyin_converter_cover.jpg");
+
+    QProcess process;
+    process.start(ffmpeg, {
+        QStringLiteral("-v"),      QStringLiteral("quiet"),
+        QStringLiteral("-i"),      inputPath,
+        QStringLiteral("-an"),
+        QStringLiteral("-vframes"), QStringLiteral("1"),
+        QStringLiteral("-y"),
+        tempPath
+    });
+    process.waitForFinished(10000);
+
+    const QFileInfo info(tempPath);
+    if (process.exitCode() == 0 && info.exists() && info.size() > 0)
+        return tempPath;
+
+    return {};
+}
+
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFormLayout>
@@ -439,6 +517,9 @@ void ConverterWidget::startConversion()
     QString input = m_inputEdit->text();
     QString output = m_outputEdit->text();
 
+    options.tags = readTagsFromFile(input);
+    m_tempCoverArtPath = extractCoverArt(input);
+    options.coverArtPath = m_tempCoverArtPath;
     m_manager->convertAsync(input, output, options);
 }
 
@@ -493,6 +574,12 @@ void ConverterWidget::onProgress(int percent)
 
 void ConverterWidget::onFinished(bool success, const QString& error)
 {
+    // Clean up cover art temp file from this conversion
+    if (!m_tempCoverArtPath.isEmpty()) {
+        QFile::remove(m_tempCoverArtPath);
+        m_tempCoverArtPath.clear();
+    }
+
     // Check if batch mode
     if (!m_trackQueue.isEmpty() && m_currentTrackIndex >= 0) {
         if (!success) {
@@ -653,6 +740,9 @@ void ConverterWidget::processNextTrack()
     options.channels = m_channelsCombo->currentData().toInt();
 
     // Start conversion
+    options.tags = readTagsFromFile(inputPath);
+    m_tempCoverArtPath = extractCoverArt(inputPath);
+    options.coverArtPath = m_tempCoverArtPath;
     m_manager->convertAsync(inputPath, outputPath, options);
 }
 

@@ -65,6 +65,11 @@ QStringList OggWrapper::buildArguments(
         args << "--downmix";
     }
 
+    // Write tags as Vorbis comments
+    for (auto it = options.tags.constBegin(); it != options.tags.constEnd(); ++it) {
+        args << "-c" << QString("%1=%2").arg(it.key(), it.value());
+    }
+
     // Don't use --quiet as it suppresses progress output
     // oggenc shows progress by default
 

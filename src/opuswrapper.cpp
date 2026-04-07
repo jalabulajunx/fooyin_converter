@@ -63,6 +63,16 @@ QStringList OpusWrapper::buildArguments(
         args << "--downmix-mono";
     }
 
+    // Write tags as Opus comments
+    for (auto it = options.tags.constBegin(); it != options.tags.constEnd(); ++it) {
+        args << "--comment" << QString("%1=%2").arg(it.key(), it.value());
+    }
+
+    // Embed cover art
+    if (!options.coverArtPath.isEmpty()) {
+        args << "--picture" << options.coverArtPath;
+    }
+
     // Don't use --quiet as it suppresses progress output
     // opusenc shows progress by default
 

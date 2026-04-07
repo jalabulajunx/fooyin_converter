@@ -1,6 +1,6 @@
 {
     "Name" : "Audio Converter Plugin for Fooyin",
-    "Version" : "0.1.0",
+    "Version" : "0.1.2",
     "Author" : "Sundararajan Mohan",
     "Copyright" : "Copyright 2026, Sundararajan Mohan",
     "License" : [ "Fooyin is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.",

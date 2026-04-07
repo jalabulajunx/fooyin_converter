@@ -51,6 +51,8 @@ private:
     void processNextTrack();
     void applyDefaultCodec();
 
+    QString m_tempCoverArtPath;
+
     ConversionManager* m_manager;
     Fooyin::SettingsManager* m_settings;
 
